@@ -1,6 +1,9 @@
 {
   "name": "fast-wrap-ansi",
   "version": "0.0.1",
+  "files": [
+    "lib"
+  ],
   "description": "A tiny and fast text wrap library which takes ANSI escapes into account.",
   "keywords": [
     "wrap",
