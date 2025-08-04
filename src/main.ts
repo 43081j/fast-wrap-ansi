@@ -34,8 +34,8 @@ const wrapAnsiCode = (code: number): string =>
 const wrapAnsiHyperlink = (url: string): string =>
   `${ESC}${ANSI_ESCAPE_LINK}${url}${ANSI_ESCAPE_BELL}`;
 
-const wordLengths = (string: string): number[] =>
-  string.split(' ').map((character) => stringWidth(character));
+const wordLengths = (words: string[]): number[] =>
+  words.map((character) => stringWidth(character));
 
 const wrapWord = (rows: string[], word: string, columns: number) => {
   const characters = word[Symbol.iterator]();
@@ -140,10 +140,11 @@ const exec = (
   let escapeCode;
   let escapeUrl;
 
-  const lengths = wordLengths(string);
+  const words = string.split(' ');
+  const lengths = wordLengths(words);
   let rows = [''];
 
-  for (const [index, word] of string.split(' ').entries()) {
+  for (const [index, word] of words.entries()) {
     if (options.trim !== false) {
       rows[rows.length - 1] = (rows.at(-1) ?? '').trimStart();
     }
