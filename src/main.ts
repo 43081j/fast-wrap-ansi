@@ -10,7 +10,8 @@ const ANSI_OSC = ']';
 const ANSI_SGR_TERMINATOR = 'm';
 const ANSI_ESCAPE_LINK = `${ANSI_OSC}8;;`;
 const GROUP_REGEX = new RegExp(
-  `(?:\\${ANSI_CSI}(?<code>\\d+)m|\\${ANSI_ESCAPE_LINK}(?<uri>.*)${ANSI_ESCAPE_BELL})`
+  `(?:\\${ANSI_CSI}(?<code>\\d+)m|\\${ANSI_ESCAPE_LINK}(?<uri>.*)${ANSI_ESCAPE_BELL})`,
+  'y'
 );
 
 const getClosingCode = (openingCode: number): number | undefined => {
@@ -37,15 +38,18 @@ const wordLengths = (string: string): number[] =>
   string.split(' ').map((character) => stringWidth(character));
 
 const wrapWord = (rows: string[], word: string, columns: number) => {
-  const characters = [...word];
+  const characters = word[Symbol.iterator]();
 
   let isInsideEscape = false;
   let isInsideLinkEscape = false;
   let lastRow = rows.at(-1);
   let visible = lastRow === undefined ? 0 : stringWidth(lastRow);
-  const charactersLength = characters.length;
+  let currentCharacter = characters.next();
+  let nextCharacter = characters.next();
+  let rawCharacterIndex = 0;
 
-  for (const [index, character] of characters.entries()) {
+  while (!currentCharacter.done) {
+    const character = currentCharacter.value;
     const characterLength = stringWidth(character);
 
     if (visible + characterLength <= columns) {
@@ -58,10 +62,10 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
     if (character === ESC || character === CSI) {
       isInsideEscape = true;
 
-      const ansiEscapeLinkCandidate = characters
-        .slice(index + 1, index + 1 + ANSI_ESCAPE_LINK.length)
-        .join('');
-      isInsideLinkEscape = ansiEscapeLinkCandidate === ANSI_ESCAPE_LINK;
+      isInsideLinkEscape = word.startsWith(
+        ANSI_ESCAPE_LINK,
+        rawCharacterIndex + 1
+      );
     }
 
     if (isInsideEscape) {
@@ -73,16 +77,18 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
       } else if (character === ANSI_SGR_TERMINATOR) {
         isInsideEscape = false;
       }
+    } else {
+      visible += characterLength;
 
-      continue;
+      if (visible === columns && !nextCharacter.done) {
+        rows.push('');
+        visible = 0;
+      }
     }
 
-    visible += characterLength;
-
-    if (visible === columns && index < charactersLength - 1) {
-      rows.push('');
-      visible = 0;
-    }
+    currentCharacter = nextCharacter;
+    nextCharacter = characters.next();
+    rawCharacterIndex += character.length;
   }
 
   lastRow = rows.at(-1);
@@ -212,8 +218,8 @@ const exec = (
     returnValue += character;
 
     if (character === ESC || character === CSI) {
-      GROUP_REGEX.lastIndex = 0;
-      const groupsResult = GROUP_REGEX.exec(preString.slice(preStringIndex));
+      GROUP_REGEX.lastIndex = preStringIndex + 1;
+      const groupsResult = GROUP_REGEX.exec(preString);
 
       const groups = groupsResult?.groups;
 
