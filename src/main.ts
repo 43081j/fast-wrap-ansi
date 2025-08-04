@@ -1,5 +1,5 @@
 import stringWidth from 'fast-string-width';
-import ansiPurge from 'ansi-purge';
+import {stripVTControlCharacters} from 'node:util';
 
 const ESC = '\x1B';
 const CSI = '\x9B';
@@ -14,7 +14,7 @@ const GROUP_REGEX = new RegExp(
   `(?:\\${ANSI_CSI}(?<code>\\d+)m|\\${ANSI_ESCAPE_LINK}(?<uri>.*)${ANSI_ESCAPE_BELL})`
 );
 
-const getClosingCode = (openingCode: number): number => {
+const getClosingCode = (openingCode: number): number | undefined => {
   if (openingCode >= 30 && openingCode <= 37) return 39;
   if (openingCode >= 90 && openingCode <= 97) return 39;
   if (openingCode >= 40 && openingCode <= 47) return 49;
@@ -25,7 +25,8 @@ const getClosingCode = (openingCode: number): number => {
   if (openingCode === 7) return 27;
   if (openingCode === 8) return 28;
   if (openingCode === 9) return 29;
-  return 0;
+  if (openingCode === 0) return 0;
+  return undefined;
 };
 
 const wrapAnsiCode = (code: number): string =>
@@ -42,7 +43,8 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
   let isInsideEscape = false;
   let isInsideLinkEscape = false;
   let lastRow = rows.at(-1);
-  let visible = lastRow === undefined ? 0 : stringWidth(ansiPurge(lastRow));
+  let visible =
+    lastRow === undefined ? 0 : stringWidth(stripVTControlCharacters(lastRow));
 
   for (const [index, character] of characters.entries()) {
     const characterLength = stringWidth(character);
@@ -137,13 +139,11 @@ const exec = (
   let rows = [''];
 
   for (const [index, word] of string.split(' ').entries()) {
-    const lastRow = rows.at(-1) ?? '';
-
     if (options.trim !== false) {
-      rows[rows.length - 1] = lastRow.trimStart();
+      rows[rows.length - 1] = (rows.at(-1) ?? '').trimStart();
     }
 
-    let rowLength = stringWidth(lastRow);
+    let rowLength = stringWidth(rows.at(-1) ?? '');
 
     if (index !== 0) {
       if (
@@ -208,17 +208,16 @@ const exec = (
     returnValue += character;
 
     if (character === ESC || character === CSI) {
+      GROUP_REGEX.lastIndex = 0;
       const groupsResult = GROUP_REGEX.exec(preString.slice(preStringIndex));
 
-      if (groupsResult?.groups) {
-        const {groups} = groupsResult;
+      const groups = groupsResult?.groups;
 
-        if (groups.code !== undefined) {
-          const code = Number.parseFloat(groups.code);
-          escapeCode = code === END_CODE ? undefined : code;
-        } else if (groups.uri !== undefined) {
-          escapeUrl = groups.uri.length === 0 ? undefined : groups.uri;
-        }
+      if (groups?.code !== undefined) {
+        const code = Number.parseFloat(groups.code);
+        escapeCode = code === END_CODE ? undefined : code;
+      } else if (groups?.uri !== undefined) {
+        escapeUrl = groups.uri.length === 0 ? undefined : groups.uri;
       }
     }
 
@@ -248,7 +247,7 @@ const exec = (
   return returnValue;
 };
 
-export function wrapAnsi(string: string, columns: number, options: Options) {
+export function wrapAnsi(string: string, columns: number, options?: Options) {
   return String(string)
     .normalize()
     .replaceAll('\r\n', '\n')
