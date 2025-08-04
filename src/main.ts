@@ -1,5 +1,4 @@
 import stringWidth from 'fast-string-width';
-import {stripVTControlCharacters} from 'node:util';
 
 const ESC = '\x1B';
 const CSI = '\x9B';
@@ -43,8 +42,8 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
   let isInsideEscape = false;
   let isInsideLinkEscape = false;
   let lastRow = rows.at(-1);
-  let visible =
-    lastRow === undefined ? 0 : stringWidth(stripVTControlCharacters(lastRow));
+  let visible = lastRow === undefined ? 0 : stringWidth(lastRow);
+  const charactersLength = characters.length;
 
   for (const [index, character] of characters.entries()) {
     const characterLength = stringWidth(character);
@@ -80,7 +79,7 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
 
     visible += characterLength;
 
-    if (visible === columns && index < characters.length - 1) {
+    if (visible === columns && index < charactersLength - 1) {
       rows.push('');
       visible = 0;
     }
@@ -199,12 +198,17 @@ const exec = (
   }
 
   const preString = rows.join('\n');
-  const pre = [...preString];
+  const pre = preString[Symbol.iterator]();
+  let currentPre = pre.next();
+  let nextPre = pre.next();
 
   // We need to keep a separate index as `String#slice()` works on Unicode code units, while `pre` is an array of codepoints.
   let preStringIndex = 0;
 
-  for (const [index, character] of pre.entries()) {
+  while (!currentPre.done) {
+    const character = currentPre.value;
+    const nextCharacter = nextPre.value;
+
     returnValue += character;
 
     if (character === ESC || character === CSI) {
@@ -223,7 +227,7 @@ const exec = (
 
     const closingCode = escapeCode ? getClosingCode(escapeCode) : undefined;
 
-    if (pre[index + 1] === '\n') {
+    if (nextCharacter === '\n') {
       if (escapeUrl) {
         returnValue += wrapAnsiHyperlink('');
       }
@@ -242,6 +246,9 @@ const exec = (
     }
 
     preStringIndex += character.length;
+
+    currentPre = nextPre;
+    nextPre = pre.next();
   }
 
   return returnValue;

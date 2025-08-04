@@ -8,14 +8,14 @@ const benchCases = [
   {
     name: 'basic wrapping',
     text: 'Hello, World!'.repeat(10),
-    columns: 20,
+    columns: 6,
     options: {
     }
   },
   {
     name: 'styled wrapping',
     text: `I am ${styleText('blue', 'blue text')} and ${styleText('red', 'red text')}`,
-    columns: 20,
+    columns: 6,
     options: {
     }
   }
