@@ -27,7 +27,8 @@
     "format": "prettier --write src test",
     "lint": "eslint src test && prettier --check src test",
     "build": "tsc",
-    "test": "node --test"
+    "test": "tsc ./test/*.test.ts && node --test",
+    "bench": "npm run build && node ./scripts/bench.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
