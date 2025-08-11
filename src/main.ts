@@ -144,7 +144,9 @@ const exec = (
   const lengths = wordLengths(words);
   let rows = [''];
 
-  for (const [index, word] of words.entries()) {
+  for (let index = 0; index < words.length; index++) {
+    const word = words[index];
+
     if (options.trim !== false) {
       rows[rows.length - 1] = (rows.at(-1) ?? '').trimStart();
     }
@@ -205,17 +207,13 @@ const exec = (
   }
 
   const preString = rows.join('\n');
-  const pre = preString[Symbol.iterator]();
-  let currentPre = pre.next();
-  let nextPre = pre.next();
-
-  // We need to keep a separate index as `String#slice()` works on Unicode code units, while `pre` is an array of codepoints.
   let preStringIndex = 0;
 
-  while (!currentPre.done) {
-    const character = currentPre.value;
-    const nextCharacter = nextPre.value;
-
+  while (preStringIndex < preString.length) {
+    let character = preString[preStringIndex];
+    if (character >= '\ud800' && character <= '\udbff') {
+      character = String.fromCodePoint(preString.codePointAt(preStringIndex) ?? 0);
+    }
     returnValue += character;
 
     if (character === ESC || character === CSI) {
@@ -232,18 +230,19 @@ const exec = (
       }
     }
 
-    const closingCode = escapeCode ? getClosingCode(escapeCode) : undefined;
+    preStringIndex += character.length;
 
-    if (nextCharacter === '\n') {
+    if (preString[preStringIndex] === '\n') {
       if (escapeUrl) {
         returnValue += wrapAnsiHyperlink('');
       }
 
+      const closingCode = escapeCode ? getClosingCode(escapeCode) : undefined;
       if (escapeCode && closingCode) {
         returnValue += wrapAnsiCode(closingCode);
       }
     } else if (character === '\n') {
-      if (escapeCode && closingCode) {
+      if (escapeCode && getClosingCode(escapeCode)) {
         returnValue += wrapAnsiCode(escapeCode);
       }
 
@@ -251,11 +250,6 @@ const exec = (
         returnValue += wrapAnsiHyperlink(escapeUrl);
       }
     }
-
-    preStringIndex += character.length;
-
-    currentPre = nextPre;
-    nextPre = pre.next();
   }
 
   return returnValue;
