@@ -34,9 +34,6 @@ const wrapAnsiCode = (code: number): string =>
 const wrapAnsiHyperlink = (url: string): string =>
   `${ESC}${ANSI_ESCAPE_LINK}${url}${ANSI_ESCAPE_BELL}`;
 
-const wordLengths = (words: string[]): number[] =>
-  words.map((character) => stringWidth(character));
-
 const wrapWord = (rows: string[], word: string, columns: number) => {
   const characters = word[Symbol.iterator]();
 
@@ -141,15 +138,18 @@ const exec = (
   let escapeUrl;
 
   const words = string.split(' ');
-  const lengths = wordLengths(words);
   let rows = [''];
+  let rowLength = 0;
 
   for (const [index, word] of words.entries()) {
     if (options.trim !== false) {
-      rows[rows.length - 1] = (rows.at(-1) ?? '').trimStart();
+      const row = rows.at(-1) ?? '';
+      const trimmed = row.trimStart();
+      if (row.length !== trimmed.length) {
+        rows[rows.length - 1] = trimmed;
+        rowLength = stringWidth(trimmed);
+      }
     }
-
-    let rowLength = stringWidth(rows.at(-1) ?? '');
 
     if (index !== 0) {
       if (
@@ -166,38 +166,44 @@ const exec = (
       }
     }
 
-    if (options.hard && lengths[index] > columns) {
+    const wordLength = stringWidth(word);
+    if (options.hard && wordLength > columns) {
       const remainingColumns = columns - rowLength;
       const breaksStartingThisLine =
-        1 + Math.floor((lengths[index] - remainingColumns - 1) / columns);
-      const breaksStartingNextLine = Math.floor((lengths[index] - 1) / columns);
+        1 + Math.floor((wordLength - remainingColumns - 1) / columns);
+      const breaksStartingNextLine = Math.floor((wordLength - 1) / columns);
       if (breaksStartingNextLine < breaksStartingThisLine) {
         rows.push('');
       }
 
       wrapWord(rows, word, columns);
+      rowLength = stringWidth(rows.at(-1) ?? '')
       continue;
     }
 
     if (
-      rowLength + lengths[index] > columns &&
+      rowLength + wordLength > columns &&
       rowLength > 0 &&
-      lengths[index] > 0
+      wordLength > 0
     ) {
       if (options.wordWrap === false && rowLength < columns) {
         wrapWord(rows, word, columns);
+        rowLength = stringWidth(rows.at(-1) ?? '')
         continue;
       }
 
       rows.push('');
+      rowLength = 0;
     }
 
-    if (rowLength + lengths[index] > columns && options.wordWrap === false) {
+    if (rowLength + wordLength > columns && options.wordWrap === false) {
       wrapWord(rows, word, columns);
+      rowLength = stringWidth(rows.at(-1) ?? '')
       continue;
     }
 
     rows[rows.length - 1] += word;
+    rowLength += wordLength;
   }
 
   if (options.trim !== false) {
