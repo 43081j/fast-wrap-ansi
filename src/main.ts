@@ -89,12 +89,7 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
   }
 
   lastRow = rows.at(-1);
-  if (
-    !visible &&
-    lastRow !== undefined &&
-    lastRow.length > 0 &&
-    rows.length > 1
-  ) {
+  if (!visible && lastRow !== undefined && lastRow.length && rows.length > 1) {
     rows[rows.length - 2] += rows.pop();
   }
 };
@@ -103,8 +98,8 @@ const stringVisibleTrimSpacesRight = (string: string): string => {
   const words = string.split(' ');
   let last = words.length;
 
-  while (last > 0) {
-    if (stringWidth(words[last - 1]) > 0) {
+  while (last) {
+    if (stringWidth(words[last - 1])) {
       break;
     }
 
@@ -160,7 +155,7 @@ const exec = (
         rowLength = 0;
       }
 
-      if (rowLength > 0 || options.trim === false) {
+      if (rowLength || options.trim === false) {
         rows[rows.length - 1] += ' ';
         rowLength++;
       }
@@ -177,18 +172,14 @@ const exec = (
       }
 
       wrapWord(rows, word, columns);
-      rowLength = stringWidth(rows.at(-1) ?? '')
+      rowLength = stringWidth(rows.at(-1) ?? '');
       continue;
     }
 
-    if (
-      rowLength + wordLength > columns &&
-      rowLength > 0 &&
-      wordLength > 0
-    ) {
+    if (rowLength + wordLength > columns && rowLength && wordLength) {
       if (options.wordWrap === false && rowLength < columns) {
         wrapWord(rows, word, columns);
-        rowLength = stringWidth(rows.at(-1) ?? '')
+        rowLength = stringWidth(rows.at(-1) ?? '');
         continue;
       }
 
@@ -198,7 +189,7 @@ const exec = (
 
     if (rowLength + wordLength > columns && options.wordWrap === false) {
       wrapWord(rows, word, columns);
-      rowLength = stringWidth(rows.at(-1) ?? '')
+      rowLength = stringWidth(rows.at(-1) ?? '');
       continue;
     }
 
