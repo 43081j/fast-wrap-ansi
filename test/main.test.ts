@@ -1,7 +1,6 @@
-import {test} from 'node:test';
+import {test, assert} from 'vitest';
 import {styleText, stripVTControlCharacters} from 'node:util';
-import * as assert from 'node:assert/strict';
-import {wrapAnsi} from '../lib/main.js';
+import {wrapAnsi} from '../src/main.js';
 
 const fixture =
   'The quick brown ' +
