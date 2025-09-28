@@ -1,6 +1,12 @@
 import {test, assert} from 'vitest';
-import {styleText, stripVTControlCharacters} from 'node:util';
+import {stripVTControlCharacters} from 'node:util';
+import picocolors from 'picocolors';
 import {wrapAnsi} from '../src/main.js';
+
+const styleText = (
+  color: keyof Omit<typeof picocolors, 'createColors' | 'isColorSupported'>,
+  str: string
+) => picocolors[color](str);
 
 const fixture =
   'The quick brown ' +

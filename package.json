@@ -25,7 +25,10 @@
   "main": "lib/main.js",
   "scripts": {
     "format": "prettier --write src test",
-    "lint": "eslint src test && prettier --check src test",
+    "lint": "npm run lint:js && npm run lint:format && npm run lint:types",
+    "lint:js": "eslint src test",
+    "lint:format": "prettier --check src test",
+    "lint:types": "npx tsc --noEmit -p tsconfig.test.json",
     "build": "tsc",
     "test": "vitest run"
   },
@@ -35,6 +38,7 @@
     "eslint": "^9.32.0",
     "fast-wrap-ansi-prod": "npm:fast-wrap-ansi@*",
     "globals": "^16.3.0",
+    "picocolors": "^1.1.1",
     "prettier": "^3.6.2",
     "tinybench": "^4.0.1",
     "typescript": "^5.8.3",
