@@ -39,11 +39,11 @@
     "fast-wrap-ansi-prod": "npm:fast-wrap-ansi@*",
     "picocolors": "^1.1.1",
     "prettier": "^3.6.2",
-    "tinybench": "^4.0.1",
+    "tinybench": "^5.0.1",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vitest": "^3.2.4",
-    "wrap-ansi": "^9.0.0"
+    "wrap-ansi": "^9.0.2"
   },
   "dependencies": {
     "fast-string-width": "^1.1.0"
