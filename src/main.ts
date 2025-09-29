@@ -204,17 +204,21 @@ const exec = (
   }
 
   const preString = rows.join('\n');
-  let preStringIndex = 0;
+  let inSurrogate = false;
 
-  while (preStringIndex < preString.length) {
-    let character = preString[preStringIndex];
-    if (character >= '\ud800' && character <= '\udbff') {
-      character = String.fromCodePoint(preString.codePointAt(preStringIndex) ?? 0);
-    }
+  for (let i = 0; i < preString.length; i++) {
+    const character = preString[i];
+
     returnValue += character;
 
+    if (!inSurrogate) {
+      inSurrogate = character >= '\ud800' && character <= '\udbff';
+    } else {
+      continue;
+    }
+
     if (character === ESC || character === CSI) {
-      GROUP_REGEX.lastIndex = preStringIndex + 1;
+      GROUP_REGEX.lastIndex = i + 1;
       const groupsResult = GROUP_REGEX.exec(preString);
 
       const groups = groupsResult?.groups;
@@ -227,9 +231,7 @@ const exec = (
       }
     }
 
-    preStringIndex += character.length;
-
-    if (preString[preStringIndex] === '\n') {
+    if (preString[i + 1] === '\n') {
       if (escapeUrl) {
         returnValue += wrapAnsiHyperlink('');
       }
