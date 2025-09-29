@@ -34,9 +34,6 @@ const wrapAnsiCode = (code: number): string =>
 const wrapAnsiHyperlink = (url: string): string =>
   `${ESC}${ANSI_ESCAPE_LINK}${url}${ANSI_ESCAPE_BELL}`;
 
-const wordLengths = (words: string[]): number[] =>
-  words.map((character) => stringWidth(character));
-
 const wrapWord = (rows: string[], word: string, columns: number) => {
   const characters = word[Symbol.iterator]();
 
@@ -92,12 +89,7 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
   }
 
   lastRow = rows.at(-1);
-  if (
-    !visible &&
-    lastRow !== undefined &&
-    lastRow.length > 0 &&
-    rows.length > 1
-  ) {
+  if (!visible && lastRow !== undefined && lastRow.length && rows.length > 1) {
     rows[rows.length - 2] += rows.pop();
   }
 };
@@ -106,8 +98,8 @@ const stringVisibleTrimSpacesRight = (string: string): string => {
   const words = string.split(' ');
   let last = words.length;
 
-  while (last > 0) {
-    if (stringWidth(words[last - 1]) > 0) {
+  while (last) {
+    if (stringWidth(words[last - 1])) {
       break;
     }
 
@@ -141,15 +133,20 @@ const exec = (
   let escapeUrl;
 
   const words = string.split(' ');
-  const lengths = wordLengths(words);
   let rows = [''];
+  let rowLength = 0;
 
-  for (const [index, word] of words.entries()) {
+  for (let index = 0; index < words.length; index++) {
+    const word = words[index];
+
     if (options.trim !== false) {
-      rows[rows.length - 1] = (rows.at(-1) ?? '').trimStart();
+      const row = rows.at(-1) ?? '';
+      const trimmed = row.trimStart();
+      if (row.length !== trimmed.length) {
+        rows[rows.length - 1] = trimmed;
+        rowLength = stringWidth(trimmed);
+      }
     }
-
-    let rowLength = stringWidth(rows.at(-1) ?? '');
 
     if (index !== 0) {
       if (
@@ -160,44 +157,46 @@ const exec = (
         rowLength = 0;
       }
 
-      if (rowLength > 0 || options.trim === false) {
+      if (rowLength || options.trim === false) {
         rows[rows.length - 1] += ' ';
         rowLength++;
       }
     }
 
-    if (options.hard && lengths[index] > columns) {
+    const wordLength = stringWidth(word);
+    if (options.hard && wordLength > columns) {
       const remainingColumns = columns - rowLength;
       const breaksStartingThisLine =
-        1 + Math.floor((lengths[index] - remainingColumns - 1) / columns);
-      const breaksStartingNextLine = Math.floor((lengths[index] - 1) / columns);
+        1 + Math.floor((wordLength - remainingColumns - 1) / columns);
+      const breaksStartingNextLine = Math.floor((wordLength - 1) / columns);
       if (breaksStartingNextLine < breaksStartingThisLine) {
         rows.push('');
       }
 
       wrapWord(rows, word, columns);
+      rowLength = stringWidth(rows.at(-1) ?? '');
       continue;
     }
 
-    if (
-      rowLength + lengths[index] > columns &&
-      rowLength > 0 &&
-      lengths[index] > 0
-    ) {
+    if (rowLength + wordLength > columns && rowLength && wordLength) {
       if (options.wordWrap === false && rowLength < columns) {
         wrapWord(rows, word, columns);
+        rowLength = stringWidth(rows.at(-1) ?? '');
         continue;
       }
 
       rows.push('');
+      rowLength = 0;
     }
 
-    if (rowLength + lengths[index] > columns && options.wordWrap === false) {
+    if (rowLength + wordLength > columns && options.wordWrap === false) {
       wrapWord(rows, word, columns);
+      rowLength = stringWidth(rows.at(-1) ?? '');
       continue;
     }
 
     rows[rows.length - 1] += word;
+    rowLength += wordLength;
   }
 
   if (options.trim !== false) {
@@ -205,21 +204,21 @@ const exec = (
   }
 
   const preString = rows.join('\n');
-  const pre = preString[Symbol.iterator]();
-  let currentPre = pre.next();
-  let nextPre = pre.next();
+  let inSurrogate = false;
 
-  // We need to keep a separate index as `String#slice()` works on Unicode code units, while `pre` is an array of codepoints.
-  let preStringIndex = 0;
-
-  while (!currentPre.done) {
-    const character = currentPre.value;
-    const nextCharacter = nextPre.value;
+  for (let i = 0; i < preString.length; i++) {
+    const character = preString[i];
 
     returnValue += character;
 
+    if (!inSurrogate) {
+      inSurrogate = character >= '\ud800' && character <= '\udbff';
+    } else {
+      continue;
+    }
+
     if (character === ESC || character === CSI) {
-      GROUP_REGEX.lastIndex = preStringIndex + 1;
+      GROUP_REGEX.lastIndex = i + 1;
       const groupsResult = GROUP_REGEX.exec(preString);
 
       const groups = groupsResult?.groups;
@@ -232,18 +231,17 @@ const exec = (
       }
     }
 
-    const closingCode = escapeCode ? getClosingCode(escapeCode) : undefined;
-
-    if (nextCharacter === '\n') {
+    if (preString[i + 1] === '\n') {
       if (escapeUrl) {
         returnValue += wrapAnsiHyperlink('');
       }
 
+      const closingCode = escapeCode ? getClosingCode(escapeCode) : undefined;
       if (escapeCode && closingCode) {
         returnValue += wrapAnsiCode(closingCode);
       }
     } else if (character === '\n') {
-      if (escapeCode && closingCode) {
+      if (escapeCode && getClosingCode(escapeCode)) {
         returnValue += wrapAnsiCode(escapeCode);
       }
 
@@ -251,11 +249,6 @@ const exec = (
         returnValue += wrapAnsiHyperlink(escapeUrl);
       }
     }
-
-    preStringIndex += character.length;
-
-    currentPre = nextPre;
-    nextPre = pre.next();
   }
 
   return returnValue;
