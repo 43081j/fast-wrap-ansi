@@ -254,11 +254,12 @@ const exec = (
   return returnValue;
 };
 
+const CRLF_OR_LF = /\r?\n/;
+
 export function wrapAnsi(string: string, columns: number, options?: Options) {
   return String(string)
     .normalize()
-    .replaceAll('\r\n', '\n')
-    .split('\n')
+    .split(CRLF_OR_LF)
     .map((line) => exec(line, columns, options))
     .join('\n');
 }
