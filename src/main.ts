@@ -213,8 +213,11 @@ const exec = (
 
     if (!inSurrogate) {
       inSurrogate = character >= '\ud800' && character <= '\udbff';
+      if (inSurrogate) {
+        continue;
+      }
     } else {
-      continue;
+      inSurrogate = false;
     }
 
     if (character === ESC || character === CSI) {
