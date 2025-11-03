@@ -33,16 +33,16 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@eslint/js": "^9.38.0",
-    "@types/node": "^24.9.1",
-    "eslint": "^9.38.0",
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.0",
     "fast-wrap-ansi-prod": "npm:fast-wrap-ansi@*",
     "picocolors": "^1.1.1",
     "prettier": "^3.6.2",
     "tinybench": "^5.1.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
-    "vitest": "^4.0.3",
+    "vitest": "^4.0.6",
     "wrap-ansi": "^9.0.2"
   },
   "dependencies": {
