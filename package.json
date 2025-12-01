@@ -38,11 +38,11 @@
     "eslint": "^9.39.1",
     "fast-wrap-ansi-prod": "npm:fast-wrap-ansi@*",
     "picocolors": "^1.1.1",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.3",
     "tinybench": "^5.1.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.47.0",
-    "vitest": "^4.0.13",
+    "typescript-eslint": "^8.48.0",
+    "vitest": "^4.0.14",
     "wrap-ansi": "^9.0.2"
   },
   "dependencies": {
