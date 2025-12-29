@@ -41,7 +41,7 @@
     "prettier": "^3.7.4",
     "tinybench": "^6.0.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.50.0",
+    "typescript-eslint": "^8.50.1",
     "vitest": "^4.0.16",
     "wrap-ansi": "^9.0.2"
   },
