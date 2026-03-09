@@ -34,8 +34,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.3.3",
-    "eslint": "^10.0.2",
+    "@types/node": "^25.3.5",
+    "eslint": "^10.0.3",
     "fast-wrap-ansi-prod": "npm:fast-wrap-ansi@*",
     "picocolors": "^1.1.1",
     "prettier": "^3.8.1",
