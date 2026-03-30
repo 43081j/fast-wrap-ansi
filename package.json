@@ -40,9 +40,9 @@
     "picocolors": "^1.1.1",
     "prettier": "^3.8.1",
     "tinybench": "^6.0.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.1",
-    "vitest": "^4.1.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.57.2",
+    "vitest": "^4.1.2",
     "wrap-ansi": "^10.0.0"
   },
   "dependencies": {
