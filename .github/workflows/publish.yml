@@ -32,7 +32,6 @@ jobs:
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
-    environment: WORLD
     permissions:
       id-token: write
     steps:
