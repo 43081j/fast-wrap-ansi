@@ -34,15 +34,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.1.0",
-    "eslint": "^10.6.0",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.8.0",
     "fast-wrap-ansi-prod": "npm:fast-wrap-ansi@*",
     "picocolors": "^1.1.1",
-    "prettier": "^3.9.4",
-    "tinybench": "^6.0.2",
+    "prettier": "^3.9.6",
+    "tinybench": "^6.1.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1",
-    "vitest": "^4.1.9",
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10",
     "wrap-ansi": "^10.0.0"
   },
   "dependencies": {
