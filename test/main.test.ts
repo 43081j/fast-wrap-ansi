@@ -278,3 +278,42 @@ test('#39, normalizes newlines', () => {
     'foo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar'
   );
 });
+
+test('#125, does not add an empty row before a character wider than the columns', () => {
+  assert.equal(wrapAnsi('中文', 1, {hard: true}), '中\n文');
+  assert.equal(wrapAnsi('a 中文', 1, {hard: true}), 'a\n中\n文');
+  assert.equal(
+    wrapAnsi('\u001B[31m中文\u001B[39m', 1, {hard: true}),
+    '\u001B[31m中\u001B[39m\n\u001B[31m文\u001B[39m'
+  );
+  assert.equal(
+    wrapAnsi('中\u001B[31m文\u001B[39m', 1, {hard: true}),
+    '中\u001B[31m\u001B[39m\n\u001B[31m文\u001B[39m'
+  );
+});
+
+test('#125, keeps the open style when an unrelated close code appears', () => {
+  assert.equal(
+    wrapAnsi('\u001B[31mred \u001B[22mstill red', 4),
+    '\u001B[31mred\u001B[39m\n\u001B[31m\u001B[22mstill\u001B[39m\n\u001B[31mred'
+  );
+  assert.equal(
+    wrapAnsi('\u001B[1mbold \u001B[39mstill bold', 4),
+    '\u001B[1mbold\u001B[22m\n\u001B[1m\u001B[39mstill\u001B[22m\n\u001B[1mbold'
+  );
+  assert.equal(
+    wrapAnsi('\u001B[41mred plain\u001B[49m text', 5),
+    '\u001B[41mred\u001B[49m\n\u001B[41mplain\u001B[49m\ntext'
+  );
+});
+
+test('#125, fills each row completely when wordWrap is false', () => {
+  assert.equal(
+    wrapAnsi('pv uhywpb', 4, {hard: true, wordWrap: false}),
+    'pv u\nhywp\nb'
+  );
+  assert.equal(
+    wrapAnsi('ab cdefghij', 4, {hard: true, wordWrap: false}),
+    'ab c\ndefg\nhij'
+  );
+});

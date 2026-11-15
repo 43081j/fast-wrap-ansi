@@ -3,7 +3,6 @@ import stringWidth from 'fast-string-width';
 const ESC = '\x1B';
 const CSI = '\x9B';
 
-const END_CODE = 39;
 const ANSI_ESCAPE_BELL = '\u0007';
 const ANSI_CSI = '[';
 const ANSI_OSC = ']';
@@ -49,7 +48,16 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
     const character = currentCharacter.value;
     const characterLength = stringWidth(character);
 
-    if (visible + characterLength <= columns) {
+    // Escape sequences stay on the current row. A character wider than the
+    // columns can't fit any row, so it only moves to a new row when the
+    // current row already has visible content
+    if (
+      isInsideEscape ||
+      character === ESC ||
+      character === CSI ||
+      visible === 0 ||
+      visible + characterLength <= columns
+    ) {
       rows[rows.length - 1] += character;
     } else {
       rows.push(character);
@@ -164,7 +172,7 @@ const exec = (
     }
 
     const wordLength = stringWidth(word);
-    if (options.hard && wordLength > columns) {
+    if (options.hard && options.wordWrap !== false && wordLength > columns) {
       const remainingColumns = columns - rowLength;
       const breaksStartingThisLine =
         1 + Math.floor((wordLength - remainingColumns - 1) / columns);
@@ -228,7 +236,16 @@ const exec = (
 
       if (groups?.code !== undefined) {
         const code = Number.parseFloat(groups.code);
-        escapeCode = code === END_CODE ? undefined : code;
+        if (getClosingCode(code) !== undefined) {
+          escapeCode = code;
+        } else if (
+          escapeCode !== undefined &&
+          getClosingCode(escapeCode) === code
+        ) {
+          // Only a code that closes the open style ends it; an unrelated
+          // close code (e.g. 22 while a color is open) leaves it open
+          escapeCode = undefined;
+        }
       } else if (groups?.uri !== undefined) {
         escapeUrl = groups.uri.length === 0 ? undefined : groups.uri;
       }
