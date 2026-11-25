@@ -278,3 +278,38 @@ test('#39, normalizes newlines', () => {
     'foo\nbar\nfoo\nbar\nfoo\nbar\nfoo\nbar'
   );
 });
+
+test('#124, does not move a combining mark to the start of the next line', () => {
+  assert.equal(wrapAnsi('พลัง', 2, {hard: true}), 'พลั\nง');
+  assert.equal(wrapAnsi('नमस्ते', 3, {hard: true}), 'नम\nस्ते');
+});
+
+test('#124, keeps a decomposed sequence whole after NFC normalization', () => {
+  // U+FB1D decomposes to U+05D9 + U+05B4 during normalization, so the
+  // wrap boundary used to fall between the base letter and its point
+  assert.equal(wrapAnsi('!!!!\uFB1D!', 5, {hard: true}), '!!!!\u05D9\u05B4\n!');
+  // No precomposed form exists for these combining marks either. NFC also
+  // reorders them by canonical combining class (U+0323 before U+0301)
+  assert.equal(
+    wrapAnsi('abcdq\u0301\u0323x', 5, {hard: true}),
+    'abcdq\u0323\u0301\nx'
+  );
+});
+
+test('#124, keeps emoji sequences whole when wrapping', () => {
+  // ZWJ sequence
+  assert.equal(
+    wrapAnsi('ab\u{1F468}\u200D\u{1F469}\u200D\u{1F467}cd', 5, {hard: true}),
+    'ab\u{1F468}\u200D\u{1F469}\u200D\u{1F467}c\nd'
+  );
+  // Flag pair
+  assert.equal(
+    wrapAnsi('ab\u{1F1F9}\u{1F1ED}cd', 5, {hard: true}),
+    'ab\u{1F1F9}\u{1F1ED}c\nd'
+  );
+  // Skin tone modifier
+  assert.equal(
+    wrapAnsi('ab\u{1F44B}\u{1F3FD}cd', 5, {hard: true}),
+    'ab\u{1F44B}\u{1F3FD}c\nd'
+  );
+});

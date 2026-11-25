@@ -34,8 +34,18 @@ const wrapAnsiCode = (code: number): string =>
 const wrapAnsiHyperlink = (url: string): string =>
   `${ESC}${ANSI_ESCAPE_LINK}${url}${ANSI_ESCAPE_BELL}`;
 
+const segmenter = new Intl.Segmenter();
+const NON_ASCII_REGEX = /\P{ASCII}/u;
+
 const wrapWord = (rows: string[], word: string, columns: number) => {
-  const characters = word[Symbol.iterator]();
+  // Iterate grapheme clusters, so a combining mark is never pushed to the
+  // start of a new row (issue #124). ASCII-only words keep the code point
+  // iterator, so the common path stays unchanged.
+  const characters = (
+    NON_ASCII_REGEX.test(word)
+      ? Array.from(segmenter.segment(word), (segment) => segment.segment)
+      : word
+  )[Symbol.iterator]();
 
   let isInsideEscape = false;
   let isInsideLinkEscape = false;
@@ -71,7 +81,9 @@ const wrapWord = (rows: string[], word: string, columns: number) => {
           isInsideEscape = false;
           isInsideLinkEscape = false;
         }
-      } else if (character === ANSI_SGR_TERMINATOR) {
+        // A cluster can start with the terminator when a combining mark
+        // follows an SGR escape, e.g. 'm' + U+0E31
+      } else if (character[0] === ANSI_SGR_TERMINATOR) {
         isInsideEscape = false;
       }
     } else {
